@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -42,9 +44,16 @@ func main() {
 	go prep.WatchForPodManifestsForNode(quitMainUpdate)
 	go prep.WatchForHooks(quitHookUpdate)
 
+	http.HandleFunc("/_status", statusHandler)
+	go http.ListenAndServe(":8080", nil)
+
 	waitForTermination(logger, quitMainUpdate, quitHookUpdate)
 
 	logger.NoFields().Infoln("Terminating")
+}
+
+func statusHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Yup it's all good mateys\n")
 }
 
 func waitForTermination(logger logging.Logger, quitMainUpdate, quitHookUpdate chan struct{}) {
