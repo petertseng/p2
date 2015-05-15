@@ -50,7 +50,7 @@ func main() {
 	go prep.WatchForHooks(successHookUpdate, errHookUpdate, quitHookUpdate)
 
 	http.HandleFunc("/_status", statusHandler(successMainUpdate, successHookUpdate, errMainUpdate, errHookUpdate))
-	go http.ListenAndServe(":8080", nil)
+	go http.ListenAndServe(fmt.Sprintf(":%d", preparerConfig.StatusPort), nil)
 
 	waitForTermination(logger, quitMainUpdate, quitHookUpdate)
 
