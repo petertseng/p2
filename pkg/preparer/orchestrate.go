@@ -58,6 +58,7 @@ func (p *Preparer) WatchForHooks(success chan<- struct{}, errs chan<- error, qui
 			return
 		case err := <-hookErrCh:
 			p.Logger.WithField("err", err).Errorln("Error updating hooks")
+			errs <- err
 		}
 	}
 }
@@ -85,6 +86,7 @@ func (p *Preparer) WatchForPodManifestsForNode(success chan<- struct{}, errs cha
 			p.Logger.WithFields(logrus.Fields{
 				"inner_err": err,
 			}).Errorln("there was an error reading the manifest")
+			errs <- err
 		case result := <-podChan:
 			podId := result.Manifest.ID()
 			if podChanMap[podId] == nil {
