@@ -49,8 +49,22 @@ func main() {
 	go prep.WatchForPodManifestsForNode(successMainUpdate, errMainUpdate, quitMainUpdate)
 	go prep.WatchForHooks(successHookUpdate, errHookUpdate, quitHookUpdate)
 
-	http.HandleFunc("/_status", statusHandler(successMainUpdate, successHookUpdate, errMainUpdate, errHookUpdate))
-	go http.ListenAndServe(fmt.Sprintf(":%d", preparerConfig.StatusPort), nil)
+	if preparerConfig.StatusPort != 0 {
+		http.HandleFunc("/_status", statusHandler(successMainUpdate, successHookUpdate, errMainUpdate, errHookUpdate))
+		go http.ListenAndServe(fmt.Sprintf(":%d", preparerConfig.StatusPort), nil)
+	} else {
+		// Discard everything from these channel!
+		go func() {
+			for {
+				select {
+				case <-successMainUpdate:
+				case <-successHookUpdate:
+				case <-errMainUpdate:
+				case <-errHookUpdate:
+				}
+			}
+		}()
+	}
 
 	waitForTermination(logger, quitMainUpdate, quitHookUpdate)
 
