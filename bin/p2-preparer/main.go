@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -78,7 +79,29 @@ func statusHandler(mainSuccesses, hookSuccesses <-chan struct{}, mainErrors, hoo
 	go watchForErrors(hookSuccesses, hookErrors, &consecutiveHookErrors, &lastHookError)
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "hook_errors=%d main_errors=%d last_hook_error=%s last_main_error=%s\n", consecutiveHookErrors, consecutiveMainErrors, lastHookError, lastMainError)
+		status := "OK"
+
+		type StatusResponse struct {
+			Status                string `json:"status"`
+			ConsecutiveHookErrors int    `json:"consecutive_hook_errors"`
+			ConsecutivePodErrors  int    `json:"consecutive_pod_errors"`
+			LastHookError         string `json:"last_hook_error"`
+			LastPodError          string `json:"last_pod_error"`
+		}
+
+		response, err := json.Marshal(StatusResponse{
+			Status:                status,
+			ConsecutiveHookErrors: consecutiveHookErrors,
+			ConsecutivePodErrors:  consecutiveMainErrors,
+			LastHookError:         fmt.Sprintf("%+v", lastHookError),
+			LastPodError:          fmt.Sprintf("%+v", lastMainError),
+		})
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "{status:\"Unknown (couldn't marshal: %s)\"}\n", err)
+		} else {
+			fmt.Fprintf(w, "%s\n", response)
+		}
 	}
 }
 
