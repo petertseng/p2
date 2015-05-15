@@ -48,7 +48,7 @@ func main() {
 	go prep.WatchForPodManifestsForNode(successMainUpdate, errMainUpdate, quitMainUpdate)
 	go prep.WatchForHooks(successHookUpdate, errHookUpdate, quitHookUpdate)
 
-	http.HandleFunc("/_status", statusHandler)
+	http.HandleFunc("/_status", statusHandler(successMainUpdate, successHookUpdate, errMainUpdate, errHookUpdate))
 	go http.ListenAndServe(":8080", nil)
 
 	waitForTermination(logger, quitMainUpdate, quitHookUpdate)
@@ -56,8 +56,30 @@ func main() {
 	logger.NoFields().Infoln("Terminating")
 }
 
-func statusHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Yup it's all good mateys\n")
+func watchForErrors(successes <-chan struct{}, errs <-chan error, consecutive *int, lastError *error) {
+	for {
+		select {
+		case err := <-errs:
+			*lastError = err
+			*consecutive++
+		case <-successes:
+			*consecutive = 0
+		}
+	}
+}
+
+func statusHandler(mainSuccesses, hookSuccesses <-chan struct{}, mainErrors, hookErrors <-chan error) http.HandlerFunc {
+	consecutiveMainErrors := 0
+	consecutiveHookErrors := 0
+	var lastMainError error
+	var lastHookError error
+
+	go watchForErrors(mainSuccesses, mainErrors, &consecutiveMainErrors, &lastMainError)
+	go watchForErrors(hookSuccesses, hookErrors, &consecutiveHookErrors, &lastHookError)
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "hook_errors=%d main_errors=%d last_hook_error=%s last_main_error=%s\n", consecutiveHookErrors, consecutiveMainErrors, lastHookError, lastMainError)
+	}
 }
 
 func waitForTermination(logger logging.Logger, quitMainUpdate, quitHookUpdate chan struct{}) {
