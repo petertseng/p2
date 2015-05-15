@@ -39,10 +39,14 @@ func main() {
 		"version":   version.VERSION,
 	}).Infoln("Preparer started successfully")
 
+	successMainUpdate := make(chan struct{})
+	successHookUpdate := make(chan struct{})
+	errMainUpdate := make(chan error)
+	errHookUpdate := make(chan error)
 	quitMainUpdate := make(chan struct{})
 	quitHookUpdate := make(chan struct{})
-	go prep.WatchForPodManifestsForNode(quitMainUpdate)
-	go prep.WatchForHooks(quitHookUpdate)
+	go prep.WatchForPodManifestsForNode(successMainUpdate, errMainUpdate, quitMainUpdate)
+	go prep.WatchForHooks(successHookUpdate, errHookUpdate, quitHookUpdate)
 
 	http.HandleFunc("/_status", statusHandler)
 	go http.ListenAndServe(":8080", nil)

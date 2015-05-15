@@ -46,7 +46,7 @@ type Preparer struct {
 	authPolicy      auth.Policy
 }
 
-func (p *Preparer) WatchForHooks(quit chan struct{}) {
+func (p *Preparer) WatchForHooks(success chan<- struct{}, errs chan<- error, quit chan struct{}) {
 	hookErrCh := make(chan error)
 	hookQuitCh := make(chan struct{})
 
@@ -62,7 +62,7 @@ func (p *Preparer) WatchForHooks(quit chan struct{}) {
 	}
 }
 
-func (p *Preparer) WatchForPodManifestsForNode(quitAndAck chan struct{}) {
+func (p *Preparer) WatchForPodManifestsForNode(success chan<- struct{}, errs chan<- error, quitAndAck chan struct{}) {
 	pods.Log = p.Logger
 	path := kp.IntentPath(p.node)
 
