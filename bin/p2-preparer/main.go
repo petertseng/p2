@@ -69,6 +69,9 @@ func watchForErrors(successes <-chan struct{}, errs <-chan error, consecutive *i
 	}
 }
 
+// if the number of consecutive errors >= tooManyErrors, the status is critical.
+const tooManyErrors = 10
+
 func statusHandler(mainSuccesses, hookSuccesses <-chan struct{}, mainErrors, hookErrors <-chan error) http.HandlerFunc {
 	consecutiveMainErrors := 0
 	consecutiveHookErrors := 0
@@ -80,6 +83,10 @@ func statusHandler(mainSuccesses, hookSuccesses <-chan struct{}, mainErrors, hoo
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		status := "OK"
+		if consecutiveHookErrors >= tooManyErrors || consecutiveMainErrors >= tooManyErrors {
+			w.WriteHeader(http.StatusInternalServerError)
+			status = "CRITICAL"
+		}
 
 		type StatusResponse struct {
 			Status                string `json:"status"`
