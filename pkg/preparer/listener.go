@@ -58,6 +58,8 @@ func (l *HookListener) Sync(quit <-chan struct{}, successCh chan<- struct{}, err
 		case err := <-watcherErrCh:
 			l.Logger.WithField("err", err).Errorln("Error while watching pods")
 			errCh <- err
+		case <-noManifestsCh:
+			successCh <- struct{}{}
 		case result := <-podChan:
 			sub := l.Logger.SubLogger(logrus.Fields{
 				"pod":  result.Manifest.ID(),
@@ -100,6 +102,7 @@ func (l *HookListener) Sync(quit <-chan struct{}, successCh chan<- struct{}, err
 			newSHA, _ := result.Manifest.SHA()
 
 			if err != pods.NoCurrentManifest && currentSHA == newSHA {
+				successCh <- struct{}{}
 				// we are up-to-date, continue
 				break
 			}
@@ -125,6 +128,7 @@ func (l *HookListener) Sync(quit <-chan struct{}, successCh chan<- struct{}, err
 				sub.WithField("err", err).Errorln("Could not write hook link")
 			} else {
 				sub.NoFields().Infoln("Updated hook")
+				successCh <- struct{}{}
 			}
 		}
 	}

@@ -88,6 +88,8 @@ func (p *Preparer) WatchForPodManifestsForNode(success chan<- struct{}, errs cha
 				"inner_err": err,
 			}).Errorln("there was an error reading the manifest")
 			errs <- err
+		case <-noManifestsChan:
+			success <- struct{}{}
 		case result := <-podChan:
 			podId := result.Manifest.ID()
 			if podChanMap[podId] == nil {
@@ -97,6 +99,7 @@ func (p *Preparer) WatchForPodManifestsForNode(success chan<- struct{}, errs cha
 				go p.handlePods(podChanMap[podId], quitChanMap[podId])
 			}
 			podChanMap[podId] <- result.Manifest
+			success <- struct{}{}
 		case <-quitAndAck:
 			for podToQuit, quitCh := range quitChanMap {
 				p.Logger.WithField("pod", podToQuit).Infoln("Quitting...")
