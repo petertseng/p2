@@ -101,7 +101,8 @@ func TestHookPodsInstallAndLinkCorrectly(t *testing.T) {
 	}
 
 	errCh := make(chan error, 1)
-	listener.Sync(fakeIntent.quit, errCh)
+	successCh := make(chan struct{}, 1)
+	listener.Sync(fakeIntent.quit, successCh, errCh)
 	select {
 	case err := <-errCh:
 		Assert(t).IsNil(err, "There should not have been an error in the call to sync")

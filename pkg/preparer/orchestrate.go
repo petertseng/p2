@@ -50,7 +50,7 @@ func (p *Preparer) WatchForHooks(success chan<- struct{}, errs chan<- error, qui
 	hookErrCh := make(chan error)
 	hookQuitCh := make(chan struct{})
 
-	go p.hookListener.Sync(hookQuitCh, hookErrCh)
+	go p.hookListener.Sync(hookQuitCh, success, hookErrCh)
 	for {
 		select {
 		case <-quit:

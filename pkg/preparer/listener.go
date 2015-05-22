@@ -38,7 +38,7 @@ type HookListener struct {
 // any pods listed there in a hook pod directory. Following that, it will
 // remove old links named by the same pod in the same event directory and
 // symlink in the new pod's launchables.
-func (l *HookListener) Sync(quit <-chan struct{}, errCh chan<- error) {
+func (l *HookListener) Sync(quit <-chan struct{}, successCh chan<- struct{}, errCh chan<- error) {
 
 	watchPath := l.HookPrefix
 
