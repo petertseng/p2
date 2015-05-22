@@ -140,10 +140,11 @@ func (r Replicator) updateOne(node string, done chan<- string, errCh chan<- erro
 	}
 
 	realityResults := make(chan kp.ManifestResult)
+	realityNoManifests := make(chan struct{})
 	realityErr := make(chan error)
 	realityQuit := make(chan struct{})
 	defer close(realityQuit)
-	go r.Store.WatchPods(kp.RealityPath(node, r.Manifest.ID()), realityQuit, realityErr, realityResults)
+	go r.Store.WatchPods(kp.RealityPath(node, r.Manifest.ID()), realityQuit, realityNoManifests, realityErr, realityResults)
 REALITY_LOOP:
 	for {
 		select {

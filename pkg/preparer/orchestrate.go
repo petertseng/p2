@@ -31,7 +31,7 @@ type Store interface {
 	Pod(string) (*pods.Manifest, time.Duration, error)
 	SetPod(string, pods.Manifest) (time.Duration, error)
 	RegisterService(pods.Manifest, string) error
-	WatchPods(string, <-chan struct{}, chan<- error, chan<- kp.ManifestResult)
+	WatchPods(string, <-chan struct{}, chan<- struct{}, chan<- error, chan<- kp.ManifestResult)
 }
 
 type Preparer struct {
@@ -69,10 +69,11 @@ func (p *Preparer) WatchForPodManifestsForNode(success chan<- struct{}, errs cha
 
 	// This allows us to signal the goroutine watching consul to quit
 	watcherQuit := make(<-chan struct{})
+	noManifestsChan := make(chan struct{})
 	errChan := make(chan error)
 	podChan := make(chan kp.ManifestResult)
 
-	go p.store.WatchPods(path, watcherQuit, errChan, podChan)
+	go p.store.WatchPods(path, watcherQuit, noManifestsChan, errChan, podChan)
 
 	// we will have one long running goroutine for each app installed on this
 	// host. We keep a map of podId => podChan so we can send the new manifests

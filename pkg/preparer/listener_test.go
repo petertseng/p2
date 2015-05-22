@@ -34,7 +34,7 @@ func fakeStoreWithManifests(manifests ...kp.ManifestResult) *fakeIntentStore {
 	}
 }
 
-func (f *fakeIntentStore) WatchPods(watchedPath string, quitCh <-chan struct{}, errCh chan<- error, podCh chan<- kp.ManifestResult) {
+func (f *fakeIntentStore) WatchPods(watchedPath string, quitCh <-chan struct{}, noManifestsCh chan<- struct{}, errCh chan<- error, podCh chan<- kp.ManifestResult) {
 	f.watchedPath = watchedPath
 	go func() {
 		for _, manifest := range f.manifests {

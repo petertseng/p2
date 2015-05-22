@@ -56,9 +56,10 @@ func main() {
 	log.Printf("Watching manifests at %s\n", path)
 
 	quit := make(chan struct{})
+	noManifests := make(chan struct{})
 	errChan := make(chan error)
 	podCh := make(chan kp.ManifestResult)
-	go store.WatchPods(path, quit, errChan, podCh)
+	go store.WatchPods(path, quit, noManifests, errChan, podCh)
 	for {
 		select {
 		case result := <-podCh:

@@ -106,7 +106,7 @@ func (s *Store) ListPods(keyPrefix string) ([]ManifestResult, time.Duration, err
 // All the values under the given key prefix must be pod manifests. Emitted
 // manifests might be unchanged from the last time they were read. It is the
 // caller's responsibility to filter out unchanged manifests.
-func (s *Store) WatchPods(keyPrefix string, quitChan <-chan struct{}, errChan chan<- error, podChan chan<- ManifestResult) {
+func (s *Store) WatchPods(keyPrefix string, quitChan <-chan struct{}, noManifestsChan chan<- struct{}, errChan chan<- error, podChan chan<- ManifestResult) {
 	defer close(podChan)
 
 	var curIndex uint64 = 0
@@ -123,6 +123,9 @@ func (s *Store) WatchPods(keyPrefix string, quitChan <-chan struct{}, errChan ch
 				errChan <- KVError{Op: "list", Key: keyPrefix}
 			} else {
 				curIndex = meta.LastIndex
+				if len(pairs) == 0 {
+					noManifestsChan <- struct{}{}
+				}
 				for _, pair := range pairs {
 					manifest, err := pods.ManifestFromBytes(pair.Value)
 					if err != nil {

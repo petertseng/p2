@@ -21,7 +21,7 @@ import (
 var eventPrefix = regexp.MustCompile("/?([a-zA-Z\\_]+)\\/.+")
 
 type IntentStore interface {
-	WatchPods(watchPath string, quit <-chan struct{}, errCh chan<- error, manifests chan<- kp.ManifestResult)
+	WatchPods(watchPath string, quit <-chan struct{}, noManifests chan<- struct{}, errCh chan<- error, manifests chan<- kp.ManifestResult)
 }
 
 type HookListener struct {
@@ -43,10 +43,11 @@ func (l *HookListener) Sync(quit <-chan struct{}, successCh chan<- struct{}, err
 	watchPath := l.HookPrefix
 
 	watcherQuit := make(chan struct{})
+	noManifestsCh := make(chan struct{})
 	watcherErrCh := make(chan error)
 	podChan := make(chan kp.ManifestResult)
 
-	go l.Intent.WatchPods(watchPath, watcherQuit, watcherErrCh, podChan)
+	go l.Intent.WatchPods(watchPath, watcherQuit, noManifestsCh, watcherErrCh, podChan)
 
 	for {
 		select {
