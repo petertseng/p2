@@ -111,6 +111,16 @@ func NewConsulStore(opts Options) Store {
 	}
 }
 
+func NewFromClient(client *api.Client) Store {
+	return &consulStore{
+		client: client,
+		// Should this be configurable?
+		// The one user of this (replication controllers) doesn't use health managers.
+		// Therefore, it doesn't care what this value is!
+		UseSessionHealth: true,
+	}
+}
+
 // KVError encapsulates an error in a Store operation. Errors returned from the
 // Consul API cannot be exposed because they may contain the URL of the request,
 // which includes an ACL token as a query parameter.
